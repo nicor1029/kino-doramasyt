@@ -69,3 +69,10 @@ test("uqload y ok.ru entregan HLS", async () => {
   const o = await run("fx-ok.json", "resolve", "komi-san-wa-komyushou-desu-live-action|1|ok");
   assert.ok(o.url.includes(".m3u8"));
 });
+
+test("las portadas pasan por el servicio de imágenes", async () => {
+  const items = itemsOf(await run("fx-search.json", "search", "kim"));
+  const posters = items.map((i) => i.poster).filter(Boolean);
+  assert.ok(posters.length >= 1);
+  assert.ok(posters.every((p) => p.startsWith("https://i0.wp.com/www.doramasyt.com/")));
+});

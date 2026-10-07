@@ -7,6 +7,10 @@ function decode(s) {
     .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
 }
 function safeId(s) { return String(s).replace(/[^A-Za-z0-9._~-]/g, "-").slice(0, 128); }
+function proxyImg(u) {
+  const m = String(u || "").match(/^https:\/\/(www\.doramasyt\.com\/[^?#]+)/);
+  return m ? "https://i0.wp.com/" + m[1] : String(u || "");
+}
 function log(m) { try { kino.log(m); } catch (e) {} }
 
 async function getText(url, headers) {
@@ -32,7 +36,7 @@ function parseCards(html) {
     const img = m[3].match(/data-src="([^"]+)"/);
     const y = m[3].match(/(\d{4})\s*<\/span>/);
     seen[slug] = 1;
-    out.push({ slug: slug, title: decode(t[1]).trim(), poster: img ? img[1] : "", year: y ? y[1] : "" });
+    out.push({ slug: slug, title: decode(t[1]).trim(), poster: img ? proxyImg(img[1]) : "", year: y ? y[1] : "" });
   }
   return out;
 }
@@ -45,8 +49,17 @@ function toItem(c) {
 
 export async function search(query) {
   const q = String((query && query.q) || "").trim();
-  const html = q ? await getText(BASE + "/buscar?q=" + encodeURIComponent(q)) : await getText(BASE + "/doramas");
-  return parseCards(html).slice(0, 100).map(toItem);
+  if (!q) return parseCards(await getText(BASE + "/doramas")).slice(0, 100).map(toItem);
+  const tries = [q];
+  const dashed = q.replace(/\s+/g, "-");
+  if (dashed !== q) tries.push(dashed);
+  const first = q.split(/\s+/)[0];
+  if (first !== q) tries.push(first);
+  for (const t of tries) {
+    const items = parseCards(await getText(BASE + "/buscar?q=" + encodeURIComponent(t)));
+    if (items.length) return items.slice(0, 100).map(toItem);
+  }
+  return [];
 }
 
 export async function home() {
@@ -97,7 +110,7 @@ export async function episodes(ref) {
   let g;
   while ((g = gre.exec(html))) genres.push(decode(g[1]).trim());
   if (h1) series.title = decode(h1[1]).trim();
-  if (img) series.poster = decode(img[1]);
+  if (img) series.poster = proxyImg(decode(img[1]));
   if (ov) series.overview = decode(ov[1]).replace(/^Ver .*?DoramasYT\.\s*/, "").trim();
   if (ym) series.year = ym[1];
   if (genres.length) series.genres = genres;
