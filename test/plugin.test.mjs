@@ -76,3 +76,8 @@ test("las portadas pasan por el servicio de imágenes", async () => {
   assert.ok(posters.length >= 1);
   assert.ok(posters.every((p) => p.startsWith("https://i0.wp.com/www.doramasyt.com/")));
 });
+
+test("voe entrega HLS", async () => {
+  const s = await run("fx-voe.json", "resolve", "whats-wrong-with-secretary-kim-latino|16|voe");
+  assert.ok(s.url.includes(".m3u8"));
+});

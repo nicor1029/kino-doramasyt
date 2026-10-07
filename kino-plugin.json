@@ -1,7 +1,7 @@
 {
   "id": "doramasyt-es",
   "name": "doramasyt",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "apiVersion": 5,
   "entry": "plugin.js",
   "description": "Doramas asiáticos en subtítulos y latino, de doramasyt.com. No pide cuenta ni configuración.",
@@ -19,7 +19,11 @@
     "uqload.com",
     "*.uqload.com",
     "uqload.vc",
-    "*.uqload.vc"
+    "*.uqload.vc",
+    "voe.sx",
+    "*.voe.sx",
+    "teresapoliticallearn.com",
+    "*.teresapoliticallearn.com"
   ],
   "streamHosts": "any",
   "capabilities": [
@@ -35,6 +39,6 @@
   ],
   "signature": {
     "authorKey": "71573c60369c35254b365607723542f8014f016b99e6e4c334530ad3df066191",
-    "value": "c23fafe2f3dd6cec8df475298ef03ea39b59eef40beb0546dbc0d922dd6560798639208b1a2804d71c9ea7cddf7878e53d3ee76665715193f3321ce36915b00d"
+    "value": "9b908fa7f5fc0388f70d22ab350249ed6e5f06260b9abfb31d79373b4ce04cdb1ccf21cfb057f0c43a80f16a3eddace2ff55b4a58be3e6e614e425e244edf30e"
   }
 }

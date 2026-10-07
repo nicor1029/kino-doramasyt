@@ -1,6 +1,6 @@
 const BASE = "https://www.doramasyt.com";
 const UA = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36";
-const SERVERS = ["mp4upload", "ok", "lulu", "uqload"];
+const SERVERS = ["mp4upload", "ok", "lulu", "uqload", "voe"];
 
 function decode(s) {
   return String(s || "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
@@ -175,7 +175,38 @@ async function fromUqload(url) {
   const u = m[0];
   return { url: u, mime: /m3u8/.test(u) ? "application/x-mpegURL" : "video/mp4", headers: { Referer: "https://uqload.com/", "User-Agent": UA } };
 }
-const READERS = { mp4upload: fromMp4upload, ok: fromOk, lulu: fromLulu, uqload: fromUqload };
+function b64(s) {
+  const bin = atob(s);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+function voeDecode(html) {
+  const m = html.match(/<script type="application\/json"[^>]*>\s*\["([^"]+)"\]\s*<\/script>/);
+  if (!m) return null;
+  let t = m[1].replace(/[A-Za-z]/g, (c) => {
+    const base = c <= "Z" ? 65 : 97;
+    return String.fromCharCode((c.charCodeAt(0) - base + 13) % 26 + base);
+  });
+  for (const p of ["@$", "^^", "~@", "%?", "*~", "\x21\x21", "#&"]) t = t.split(p).join("");
+  const a = b64(t);
+  const s = Array.from(a).map((c) => String.fromCharCode(c.charCodeAt(0) - 3)).join("").split("").reverse().join("");
+  return JSON.parse(b64(s));
+}
+async function fromVoe(url) {
+  let html = await getText(url, { Referer: BASE + "/" });
+  let from = url;
+  if (html.indexOf('type="application/json"') < 0) {
+    const r = html.match(/https:\/\/[a-z0-9.-]+\/e\/[a-z0-9]+/);
+    if (!r) return null;
+    from = r[0];
+    html = await getText(from, { Referer: "https://voe.sx/" });
+  }
+  const o = voeDecode(html);
+  if (!o || !o.source) return null;
+  return { url: o.source, mime: "application/x-mpegURL", headers: { Referer: new URL(from).origin + "/", "User-Agent": UA } };
+}
+const READERS = { mp4upload: fromMp4upload, ok: fromOk, lulu: fromLulu, uqload: fromUqload, voe: fromVoe };
 
 export async function resolve(ref) {
   const parts = String(ref).split("|");
