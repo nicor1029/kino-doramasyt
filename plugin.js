@@ -129,6 +129,44 @@ export async function browse(ref, cursor) {
   return more ? { items: items, next: String(page + 1) } : { items: items };
 }
 
+const SECTION_TABS = [
+  { id: "emision", label: "En emisión" },
+  { id: "paises", label: "Países" },
+  { id: "generos", label: "Géneros" },
+];
+const COUNTRY_SLUGS = ["k-drama", "c-drama", "j-drama", "thai-drama"];
+
+async function rowFor(path, id, title, ref) {
+  try {
+    const html = await getText(BASE + path);
+    const items = parseCards(html).slice(0, 24).map(toItem);
+    return items.length ? { id: id, title: title, ref: ref, items: items } : null;
+  } catch (e) {
+    log("fila " + id);
+    return null;
+  }
+}
+
+export async function section(arg) {
+  const want = arg && arg.tab;
+  const tab = SECTION_TABS.some((t) => t.id === want) ? want : "emision";
+  let rows = [];
+  if (tab === "emision") {
+    rows = await Promise.all([
+      rowFor("/emision", "emision", "En emisión", "emision"),
+      rowFor("/doramas", "catalogo", "Catálogo", "nuevos"),
+    ]);
+  } else {
+    const list = GENRES.filter((g) => (COUNTRY_SLUGS.indexOf(g[0]) >= 0) === (tab === "paises"));
+    for (let i = 0; i < list.length; i += 6) {
+      const batch = list.slice(i, i + 6);
+      const got = await Promise.all(batch.map((g) => rowFor("/genero/" + g[0], "g-" + g[0], g[1], "g:" + g[0])));
+      rows = rows.concat(got);
+    }
+  }
+  return { tabs: SECTION_TABS, tab: tab, rows: rows.filter(Boolean) };
+}
+
 export async function episodes(ref) {
   const slug = String(ref);
   const url = BASE + "/dorama/" + encodeURIComponent(slug);

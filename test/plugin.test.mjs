@@ -113,3 +113,25 @@ test("una categoría trae títulos y página siguiente", async () => {
   assert.ok(itemsOf(out).length > 0);
   assert.equal(out.next, "2");
 });
+
+test("la sección trae tres pestañas y filas con Ver más", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "doramas-sec-"));
+  const copy = join(dir, "plugin.mjs");
+  writeFileSync(copy, readFileSync(join(root, "plugin.js")));
+  const card = '<a href="https://www.doramasyt.com/dorama/ejemplo-sub-espanol"><img data-src="https://www.doramasyt.com/thumbs/imagen/ejemplo-1.webp"><h3 class="title_cap">Ejemplo</h3><span>Dorama · 2026</span></a>';
+  globalThis.kino = {
+    fetch: async () => ({ ok: true, status: 200, text: async () => card }),
+    storage: { get: async () => { throw new Error("vacío"); }, set: async () => ({}) },
+    log: () => {},
+    error: (code, msg) => new Error(code + ": " + msg),
+  };
+  const mod = await import(pathToFileURL(copy).href);
+  const a = await mod.section({ tab: null });
+  assert.equal(a.tab, "emision");
+  assert.equal(a.tabs.length, 3);
+  assert.ok(a.rows.length >= 1 && a.rows.every((r) => r.ref && r.items.length > 0));
+  const g = await mod.section({ tab: "generos" });
+  assert.equal(g.rows.length, 8);
+  const p = await mod.section({ tab: "paises" });
+  assert.equal(p.rows.length, 4);
+});
