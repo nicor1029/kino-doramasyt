@@ -90,14 +90,22 @@ test("voe entrega HLS", async () => {
   assert.ok(s.url.includes(".m3u8"));
 });
 
-test("las categorías son los 12 géneros del sitio", async () => {
+test("las categorías son los 12 géneros y traen imagen", async () => {
   const dir = mkdtempSync(join(tmpdir(), "doramas-cat-"));
   const copy = join(dir, "plugin.mjs");
   writeFileSync(copy, readFileSync(join(root, "plugin.js")));
+  const card = '<a href="https://www.doramasyt.com/dorama/ejemplo-sub-espanol"><img data-src="https://www.doramasyt.com/thumbs/imagen/ejemplo-1.webp"><h3 class="title_cap">Ejemplo</h3><span>Dorama · 2026</span></a>';
+  globalThis.kino = {
+    fetch: async () => ({ ok: true, status: 200, text: async () => card }),
+    storage: { get: async () => { throw new Error("vacío"); }, set: async () => ({}) },
+    log: () => {},
+    error: (code, msg) => new Error(code + ": " + msg),
+  };
   const mod = await import(pathToFileURL(copy).href);
   const tiles = await mod.categories();
   assert.equal(tiles.length, 12);
   assert.ok(tiles.every((x) => x.ref.startsWith("g:") && x.title.length <= 40));
+  assert.ok(tiles.every((x) => x.art && x.art.startsWith("https://i0.wp.com/www.doramasyt.com/")));
 });
 
 test("una categoría trae títulos y página siguiente", async () => {

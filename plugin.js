@@ -75,8 +75,46 @@ const GENRES = [
   ["escolar", "Escolar"], ["fantasia", "Fantasía"], ["historico", "Histórico"], ["j-drama", "J-Drama"],
   ["k-drama", "K-Drama"], ["misterio", "Misterio"], ["romance", "Romance"], ["thai-drama", "Thai-Drama"],
 ];
+const ART_KEY = "art:v1";
+async function readArt() {
+  try {
+    const c = await kino.storage.get(ART_KEY);
+    const raw = c && typeof c === "object" && "value" in c ? c.value : c;
+    if (typeof raw === "string") {
+      const o = JSON.parse(raw);
+      if (o && typeof o === "object") return o;
+    }
+  } catch (e) {}
+  return null;
+}
+async function genreArt(slug) {
+  try {
+    const html = await getText(BASE + "/genero/" + slug);
+    const first = parseCards(html).find((c) => c.poster);
+    return first ? first.poster : "";
+  } catch (e) {
+    log("arte " + slug);
+    return "";
+  }
+}
 export async function categories() {
-  return GENRES.map((g) => ({ id: "g-" + g[0], title: g[1], ref: "g:" + g[0] }));
+  let art = await readArt();
+  if (!art) {
+    art = {};
+    for (let i = 0; i < GENRES.length; i += 6) {
+      const batch = GENRES.slice(i, i + 6);
+      const posters = await Promise.all(batch.map((g) => genreArt(g[0])));
+      batch.forEach((g, k) => { if (posters[k]) art[g[0]] = posters[k]; });
+    }
+    if (Object.keys(art).length) {
+      try { await kino.storage.set(ART_KEY, JSON.stringify(art), { ttlMs: 6 * 3600 * 1000 }); } catch (e) {}
+    }
+  }
+  return GENRES.map((g) => {
+    const tile = { id: "g-" + g[0], title: g[1], ref: "g:" + g[0] };
+    if (art[g[0]]) tile.art = art[g[0]];
+    return tile;
+  });
 }
 
 export async function browse(ref, cursor) {
