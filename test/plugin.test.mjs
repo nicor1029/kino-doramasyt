@@ -1,10 +1,12 @@
 // Pruebas sin conexión: cada respuesta sale de las grabaciones test/fx-*.json.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { validate } from "../sdk/validate.mjs";
+import { createKino } from "../sdk/kino-shim.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const manifest = JSON.parse(readFileSync(join(root, "kino-plugin.json"), "utf8"));
@@ -23,7 +25,7 @@ test("Kino acepta el manifiesto y las funciones", async () => {
 });
 
 test("el manifiesto cumple las reglas del plugin", () => {
-  assert.equal(manifest.apiVersion, 5);
+  assert.equal(manifest.apiVersion, 6);
   assert.equal(manifest.entry, "plugin.js");
   assert.ok(!manifest.debug);
   assert.ok(!manifest.icon || !manifest.icon.startsWith("./"));
@@ -58,7 +60,13 @@ test("los capítulos salen numerados", async () => {
 });
 
 test("resolve entrega un mp4 por https", async () => {
-  const s = await run("fx-resolve.json", "resolve", "our-sticky-love|1");
+  const dir = mkdtempSync(join(tmpdir(), "doramas-res-"));
+  const copy = join(dir, "plugin.mjs");
+  writeFileSync(copy, readFileSync(join(root, "plugin.js")));
+  const k = createKino(manifest, { replay: join(root, "test", "fx-resolve.json") });
+  globalThis.kino = k.kino;
+  const mod = await import(pathToFileURL(copy).href);
+  const s = await mod.resolve("our-sticky-love|1");
   assert.ok(s.url.startsWith("https://"));
   assert.equal(s.mime, "video/mp4");
 });
@@ -80,4 +88,20 @@ test("las portadas pasan por el servicio de imágenes", async () => {
 test("voe entrega HLS", async () => {
   const s = await run("fx-voe.json", "resolve", "whats-wrong-with-secretary-kim-latino|16|voe");
   assert.ok(s.url.includes(".m3u8"));
+});
+
+test("las categorías son los 12 géneros del sitio", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "doramas-cat-"));
+  const copy = join(dir, "plugin.mjs");
+  writeFileSync(copy, readFileSync(join(root, "plugin.js")));
+  const mod = await import(pathToFileURL(copy).href);
+  const tiles = await mod.categories();
+  assert.equal(tiles.length, 12);
+  assert.ok(tiles.every((x) => x.ref.startsWith("g:") && x.title.length <= 40));
+});
+
+test("una categoría trae títulos y página siguiente", async () => {
+  const out = await run("fx-gen.json", "browse", "g:accion");
+  assert.ok(itemsOf(out).length > 0);
+  assert.equal(out.next, "2");
 });

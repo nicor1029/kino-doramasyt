@@ -1,8 +1,8 @@
 {
   "id": "doramasyt-es",
   "name": "doramasyt",
-  "version": "1.0.2",
-  "apiVersion": 5,
+  "version": "1.0.3",
+  "apiVersion": 6,
   "entry": "plugin.js",
   "description": "Doramas asiáticos en subtítulos y latino, de doramasyt.com. No pide cuenta ni configuración.",
   "author": "Nicor1029",
@@ -39,6 +39,6 @@
   ],
   "signature": {
     "authorKey": "71573c60369c35254b365607723542f8014f016b99e6e4c334530ad3df066191",
-    "value": "9b908fa7f5fc0388f70d22ab350249ed6e5f06260b9abfb31d79373b4ce04cdb1ccf21cfb057f0c43a80f16a3eddace2ff55b4a58be3e6e614e425e244edf30e"
+    "value": "3221e83145c0b0483fd09a2415686520aa0e96a6fd58c73da419b4d11872eb4a209ef084dd888a4cd3e0f0496551f652c59a2f383ddc9b24570352b96c9d7804"
   }
 }

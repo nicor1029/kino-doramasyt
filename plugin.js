@@ -70,9 +70,21 @@ export async function home() {
   return rows;
 }
 
+const GENRES = [
+  ["accion", "Acción"], ["c-drama", "C-Drama"], ["comedia", "Comedia"], ["drama", "Drama"],
+  ["escolar", "Escolar"], ["fantasia", "Fantasía"], ["historico", "Histórico"], ["j-drama", "J-Drama"],
+  ["k-drama", "K-Drama"], ["misterio", "Misterio"], ["romance", "Romance"], ["thai-drama", "Thai-Drama"],
+];
+export async function categories() {
+  return GENRES.map((g) => ({ id: "g-" + g[0], title: g[1], ref: "g:" + g[0] }));
+}
+
 export async function browse(ref, cursor) {
   const page = cursor ? Number(cursor) || 1 : 1;
-  const path = String(ref) === "emision" ? "/emision" : "/doramas";
+  const r = String(ref);
+  let path = "/doramas";
+  if (r === "emision") path = "/emision";
+  else if (r.indexOf("g:") === 0) path = "/genero/" + r.slice(2).replace(/[^a-z0-9-]/g, "");
   const html = await getText(BASE + path + "?p=" + page);
   const items = parseCards(html).map(toItem);
   const more = new RegExp("[?&]p=" + (page + 1) + "(?!\\d)").test(html);
