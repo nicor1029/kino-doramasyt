@@ -240,20 +240,38 @@ async function fromMp4upload(url) {
   if (!m) return null;
   return { url: m[1], mime: "video/mp4", headers: { Referer: "https://www.mp4upload.com/", "User-Agent": UA } };
 }
+async function fromLulu(url) {
+  const html = await getText(url, { Referer: BASE + "/" });
 async function fromOk(url) {
   const html = await getText(url, { Referer: BASE + "/" });
   const o = html.match(/data-options="([^"]+)"/);
   if (!o) return null;
-  const m = decode(o[1]).match(/"hlsManifestUrl":"([^"]+)"/);
-  if (!m) return null;
-  const u = m[1].replace(/\\u0026/g, "&").replace(/\\\//g, "/");
-  return { url: u, mime: "application/x-mpegURL", headers: { Referer: "https://ok.ru/", "User-Agent": UA } };
-}
-async function fromLulu(url) {
-  const html = await getText(url, { Referer: BASE + "/" });
-  const m = unpack(html).match(/https?:[^"'\s\\]+\.m3u8[^"'\s\\]*/);
-  if (!m) return null;
-  return { url: m[0], mime: "application/x-mpegURL", headers: { Referer: "https://luluvdo.com/", "User-Agent": UA } };
+
+  const decoded = decode(o[1]);
+  let streamUrl = null;
+  let mime = "application/x-mpegURL";
+
+  const hls = decoded.match(/"hlsManifestUrl":"([^"]+)"/);
+  if (hls) {
+    streamUrl = hls[1].replace(/\\u0026/g, "&").replace(/\\\//g, "/");
+  } else {
+    const dash = decoded.match(/(https?:\/\/[^"']*?(?:okcdn\.ru|mycdn\.me)[^"']*?\.(?:mpd|m3u8|mp4)[^"']*)/);
+    if (!dash) return null;
+    streamUrl = dash[1].replace(/\\u0026/g, "&").replace(/\\\//g, "/");
+    mime = streamUrl.includes(".mpd") ? "application/dash+xml"
+         : streamUrl.includes(".m3u8") ? "application/x-mpegURL"
+         : "video/mp4";
+  }
+
+  return {
+    url: streamUrl,
+    mime: mime,
+    headers: {
+      Referer: "https://ok.ru/",
+      "User-Agent": UA,
+      Origin: "https://ok.ru",
+    },
+  };
 }
 async function fromUqload(url) {
   const html = await getText(url, { Referer: BASE + "/" });
