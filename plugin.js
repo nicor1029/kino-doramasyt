@@ -240,8 +240,6 @@ async function fromMp4upload(url) {
   if (!m) return null;
   return { url: m[1], mime: "video/mp4", headers: { Referer: "https://www.mp4upload.com/", "User-Agent": UA } };
 }
-async function fromLulu(url) {
-  const html = await getText(url, { Referer: BASE + "/" });
 async function fromOk(url) {
   const html = await getText(url, { Referer: BASE + "/" });
   const o = html.match(/data-options="([^"]+)"/);
@@ -272,6 +270,12 @@ async function fromOk(url) {
       Origin: "https://ok.ru",
     },
   };
+}
+async function fromLulu(url) {
+  const html = await getText(url, { Referer: BASE + "/" });
+  const m = unpack(html).match(/https?:[^"'\s\\]+\.m3u8[^"'\s\\]*/);
+  if (!m) return null;
+  return { url: m[0], mime: "application/x-mpegURL", headers: { Referer: "https://luluvdo.com/", "User-Agent": UA } };
 }
 async function fromUqload(url) {
   const html = await getText(url, { Referer: BASE + "/" });
@@ -321,6 +325,7 @@ export async function resolve(ref) {
   const re = /data-player="([^"]+)"[\s\S]*?data-usa-api="\d">([^<]+)</g;
   let m;
   while ((m = re.exec(html))) found[m[2].trim().toLowerCase()] = m[1];
+  if (found.luluvdo && !found.lulu) found.lulu = found.luluvdo;
   let names = SERVERS.filter((s) => found[s]);
   if (parts[2]) names = names.filter((s) => s === parts[2].toLowerCase());
   if (!names.length) throw kino.error("not_found", "sin servidores");
