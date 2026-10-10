@@ -62,7 +62,26 @@ export async function search(query) {
   return [];
 }
 
+async function recentRow() {
+  try {
+    const html = await getText(BASE + "/");
+    const i = html.toLowerCase().indexOf("series recientes");
+    if (i < 0) return null;
+    const items = parseCards(html.slice(i)).slice(0, 24).map(toItem);
+    return items.length ? { id: "recientes", title: "Recién agregados", items: items } : null;
+  } catch (e) {
+    log("recientes");
+    return null;
+  }
+}
+
 export async function home() {
+  const [rows, recent] = await Promise.all([homeBase(), recentRow()]);
+  if (recent) rows.unshift(recent);
+  return rows;
+}
+
+async function homeBase() {
   const [nuevos, emision] = await Promise.all([getText(BASE + "/doramas"), getText(BASE + "/emision")]);
   const rows = [{ id: "nuevos", title: "Catálogo", ref: "nuevos", items: parseCards(nuevos).map(toItem) }];
   const e = parseCards(emision).map(toItem);
@@ -153,6 +172,7 @@ export async function section(arg) {
   let rows = [];
   if (tab === "emision") {
     rows = await Promise.all([
+      recentRow(),
       rowFor("/emision", "emision", "En emisión", "emision"),
       rowFor("/doramas", "catalogo", "Catálogo", "nuevos"),
     ]);

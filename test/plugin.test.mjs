@@ -147,3 +147,39 @@ test("mediafire entrega un mp4 directo", async () => {
   assert.ok(/^https:\/\/download[0-9]*\.mediafire\.com\//.test(s.url));
   assert.equal(s.mime, "video/mp4");
 });
+
+test("el inicio trae primero las series recientes de la portada", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "doramas-rec-"));
+  const copy = join(dir, "plugin.mjs");
+  writeFileSync(copy, readFileSync(join(root, "plugin.js")));
+  const card = '<h2>Series recientes</h2><a href="https://www.doramasyt.com/dorama/ejemplo-sub-espanol"><img data-src="https://www.doramasyt.com/thumbs/imagen/ejemplo-1.webp"><h3 class="title_cap">Ejemplo</h3><span>Dorama · 2026</span></a>';
+  globalThis.kino = {
+    fetch: async () => ({ ok: true, status: 200, text: async () => card }),
+    storage: { get: async () => { throw new Error("vacío"); }, set: async () => ({}) },
+    log: () => {},
+    error: (code, msg) => new Error(code + ": " + msg),
+  };
+  const mod = await import(pathToFileURL(copy).href);
+  const rows = await mod.home();
+  assert.equal(rows[0].id, "recientes");
+  assert.equal(rows[0].title, "Recién agregados");
+  assert.ok(rows[0].items.length >= 1);
+});
+
+test("el inicio trae primero las series recientes de la portada", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "doramas-rec-"));
+  const copy = join(dir, "plugin.mjs");
+  writeFileSync(copy, readFileSync(join(root, "plugin.js")));
+  const card = '<h2>Series recientes</h2><a href="https://www.doramasyt.com/dorama/ejemplo-sub-espanol"><img data-src="https://www.doramasyt.com/thumbs/imagen/ejemplo-1.webp"><h3 class="title_cap">Ejemplo</h3><span>Dorama · 2026</span></a>';
+  globalThis.kino = {
+    fetch: async () => ({ ok: true, status: 200, text: async () => card }),
+    storage: { get: async () => { throw new Error("vacío"); }, set: async () => ({}) },
+    log: () => {},
+    error: (code, msg) => new Error(code + ": " + msg),
+  };
+  const mod = await import(pathToFileURL(copy).href);
+  const rows = await mod.home();
+  assert.equal(rows[0].id, "recientes");
+  assert.equal(rows[0].title, "Recién agregados");
+  assert.ok(rows[0].items.length >= 1);
+});
