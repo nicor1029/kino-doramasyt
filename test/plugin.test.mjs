@@ -135,3 +135,15 @@ test("la sección trae tres pestañas y filas con Ver más", async () => {
   const p = await mod.section({ tab: "paises" });
   assert.equal(p.rows.length, 4);
 });
+
+test("mediafire entrega un mp4 directo", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "doramas-mf-"));
+  const copy = join(dir, "plugin.mjs");
+  writeFileSync(copy, readFileSync(join(root, "plugin.js")));
+  const k = createKino(manifest, { replay: join(root, "test", "fx-mf.json") });
+  globalThis.kino = k.kino;
+  const mod = await import(pathToFileURL(copy).href);
+  const s = await mod.resolve("komi-san-wa-komyushou-desu-live-action|1|mediafire");
+  assert.ok(/^https:\/\/download[0-9]*\.mediafire\.com\//.test(s.url));
+  assert.equal(s.mime, "video/mp4");
+});

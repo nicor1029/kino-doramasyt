@@ -1,7 +1,7 @@
 {
   "id": "doramasyt-es",
   "name": "doramasyt",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "apiVersion": 6,
   "entry": "plugin.js",
   "description": "Doramas asiáticos en subtítulos y latino, de doramasyt.com. No pide cuenta ni configuración.",
@@ -23,7 +23,9 @@
     "voe.sx",
     "*.voe.sx",
     "teresapoliticallearn.com",
-    "*.teresapoliticallearn.com"
+    "*.teresapoliticallearn.com",
+    "mediafire.com",
+    "*.mediafire.com"
   ],
   "streamHosts": "any",
   "capabilities": [
@@ -39,7 +41,7 @@
   ],
   "signature": {
     "authorKey": "71573c60369c35254b365607723542f8014f016b99e6e4c334530ad3df066191",
-    "value": "d3323766c811e653033e160a8b1011af7d45f54597e3674f3c873f00743f4f1c301033e2dd61910b8231607df37fea7fba0c6df24ecedcdd6db912fbe5544007"
+    "value": "1d44f25675de1330305e4090dd2f4af6a5bee06d4ed41fcb787511eedbebf9bdd52de9c46229853f54d8ccd0829e584c99911afc9592792516c5660ae70fe004"
   },
   "section": {
     "label": "doramasyt"

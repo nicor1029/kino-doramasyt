@@ -1,6 +1,6 @@
 const BASE = "https://www.doramasyt.com";
 const UA = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36";
-const SERVERS = ["mp4upload", "ok", "lulu", "uqload", "voe"];
+const SERVERS = ["mp4upload", "ok", "lulu", "uqload", "voe", "mediafire"];
 
 function decode(s) {
   return String(s || "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
@@ -316,7 +316,14 @@ async function fromVoe(url) {
   if (!o || !o.source) return null;
   return { url: o.source, mime: "application/x-mpegURL", headers: { Referer: new URL(from).origin + "/", "User-Agent": UA } };
 }
-const READERS = { mp4upload: fromMp4upload, ok: fromOk, lulu: fromLulu, uqload: fromUqload, voe: fromVoe };
+async function fromMediafire(url) {
+  const html = await getText(url.replace(/^http:/, "https:"), { Referer: BASE + "/", "User-Agent": "Mozilla/5.0" });
+  const m = html.match(/https:\/\/download[0-9]*\.mediafire\.com\/[^"' <>]+/);
+  if (!m) return null;
+  const u = decode(m[0]);
+  return { url: u, mime: /\.mkv/i.test(u) ? "video/x-matroska" : "video/mp4", headers: { Referer: "https://www.mediafire.com/", "User-Agent": "Mozilla/5.0" } };
+}
+const READERS = { mp4upload: fromMp4upload, ok: fromOk, lulu: fromLulu, uqload: fromUqload, voe: fromVoe, mediafire: fromMediafire };
 
 export async function resolve(ref) {
   const parts = String(ref).split("|");
@@ -326,13 +333,15 @@ export async function resolve(ref) {
   let m;
   while ((m = re.exec(html))) found[m[2].trim().toLowerCase()] = m[1];
   if (found.luluvdo && !found.lulu) found.lulu = found.luluvdo;
+  const mf = html.match(/https?:\/\/(?:www\.)?mediafire\.com\/file\/[a-z0-9]+/i);
+  if (mf) found.mediafire = mf[0];
   let names = SERVERS.filter((s) => found[s]);
   if (parts[2]) names = names.filter((s) => s === parts[2].toLowerCase());
   if (!names.length) throw kino.error("not_found", "sin servidores");
   for (let k = 0; k < names.length; k++) {
     const name = names[k];
     try {
-      const url = await embedUrl(found[name]);
+      const url = name === "mediafire" ? found[name] : await embedUrl(found[name]);
       const r = url ? await READERS[name](url) : null;
       if (!r) { log("sin video en " + name); continue; }
       const stream = { url: r.url, mime: r.mime, headers: r.headers, label: name };
